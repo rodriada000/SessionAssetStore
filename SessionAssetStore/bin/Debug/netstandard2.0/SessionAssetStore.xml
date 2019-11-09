@@ -24,11 +24,6 @@
             The author of the asset
             </summary>
         </member>
-        <member name="P:SessionAssetStore.Asset.Version">
-            <summary>
-            The version of the asset
-            </summary>
-        </member>
         <member name="P:SessionAssetStore.Asset.AssetName">
             <summary>
             The name of the asset on the storage server
@@ -44,7 +39,7 @@
             The category of the asset as a string
             </summary>
         </member>
-        <member name="M:SessionAssetStore.Asset.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String)">
+        <member name="M:SessionAssetStore.Asset.#ctor(System.String,System.String,System.String,System.String,System.String,System.String)">
             <summary>
             Default constructor
             </summary>

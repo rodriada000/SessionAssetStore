@@ -23,10 +23,6 @@ namespace SessionAssetStore
         /// </summary>
         public string Author { get; }
         /// <summary>
-        /// The version of the asset
-        /// </summary>
-        public string Version { get; }
-        /// <summary>
         /// The name of the asset on the storage server
         /// </summary>
         public string AssetName { get; }
@@ -48,12 +44,11 @@ namespace SessionAssetStore
         /// Default constructor
         /// </summary>
         [JsonConstructor]
-        public Asset(string Name, string Description, string Author, string Version, string AssetName, string Thumbnail, string Category)
+        public Asset(string Name, string Description, string Author, string AssetName, string Thumbnail, string Category)
         {
             this.Name = Name;
             this.Description = Description;
             this.Author = Author;
-            this.Version = Version;
             this.AssetName = AssetName;
             this.Thumbnail = Thumbnail;
             this.Category = Category;
