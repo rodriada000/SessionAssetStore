@@ -23,3 +23,4 @@ C:\Users\Gab\Source\Repos\SessionAssetStore\AssetStoreTest\obj\Debug\netcoreapp3
 C:\Users\Gab\Source\Repos\SessionAssetStore\AssetStoreTest\obj\Debug\netcoreapp3.0\AssetStoreTest.csproj.CopyComplete
 C:\Users\Gab\Source\Repos\SessionAssetStore\AssetStoreTest\obj\Debug\netcoreapp3.0\AssetStoreTest.dll
 C:\Users\Gab\Source\Repos\SessionAssetStore\AssetStoreTest\obj\Debug\netcoreapp3.0\AssetStoreTest.pdb
+C:\Users\Gab\Source\Repos\SessionAssetStore\AssetStoreTest\bin\Debug\netcoreapp3.0\SessionAssetStore.xml

@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SessionAssetStore</name>
+    </assembly>
+    <members>
+        <member name="T:SessionAssetStore.Asset">
+            <summary>
+            Class containing an Asset object
+            </summary>
+        </member>
+        <member name="P:SessionAssetStore.Asset.Name">
+            <summary>
+            The display name of the asset
+            </summary>
+        </member>
+        <member name="P:SessionAssetStore.Asset.Description">
+            <summary>
+            A short description of the asset
+            </summary>
+        </member>
+        <member name="P:SessionAssetStore.Asset.Author">
+            <summary>
+            The author of the asset
+            </summary>
+        </member>
+        <member name="P:SessionAssetStore.Asset.Version">
+            <summary>
+            The version of the asset
+            </summary>
+        </member>
+        <member name="P:SessionAssetStore.Asset.AssetName">
+            <summary>
+            The name of the asset on the storage server
+            </summary>
+        </member>
+        <member name="P:SessionAssetStore.Asset.Thumbnail">
+            <summary>
+            The name of the thumbnail on the storage server
+            </summary>
+        </member>
+        <member name="P:SessionAssetStore.Asset.Category">
+            <summary>
+            The category of the asset as a string
+            </summary>
+        </member>
+        <member name="M:SessionAssetStore.Asset.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Default constructor
+            </summary>
+        </member>
+        <member name="M:SessionAssetStore.Asset.ToString">
+            <summary>
+            Dumps a json string of the asset
+            </summary>
+            <returns>JSON string</returns>
+        </member>
+        <member name="T:SessionAssetStore.AssetCategory">
+            <summary>
+            Class to replace an enum to get string values.
+            </summary>
+        </member>
+        <member name="M:SessionAssetStore.AssetCategory.FromString(System.String)">
+            <summary>
+            Converts a string to an AssetCategory
+            </summary>
+            <param name="category">Name of the category</param>
+            <returns>AssetCategory object</returns>
+        </member>
+        <member name="T:SessionAssetStore.StorageManager">
+            <summary>
+            Main class for managing assets
+            </summary>
+        </member>
+        <member name="F:SessionAssetStore.StorageManager.MANIFESTS_TEMP">
+            <summary>
+            Manifests temporary directory
+            </summary>
+        </member>
+        <member name="F:SessionAssetStore.StorageManager.client">
+            <summary>
+            Shared client object
+            </summary>
+        </member>
+        <member name="M:SessionAssetStore.StorageManager.Authenticate(System.String)">
+            <summary>
+            Authenticates to the Google Cloud Storage API. Provide custom credentials to authenticate with modders rights.
+            </summary>
+            <param name="credentialsFile">The credentials to use to authenticate. Leave null for default read-only.</param>
+        </member>
+        <member name="M:SessionAssetStore.StorageManager.GetAssetManifests(SessionAssetStore.AssetCategory,System.IProgress{Google.Apis.Download.IDownloadProgress})">
+            <summary>
+            Fetch all manifests for a single category.
+            </summary>
+            <param name="assetCategory">The category of asset manifest to fetch</param>
+            <param name="progress">An IProgress object to report download activities.</param>
+        </member>
+        <member name="M:SessionAssetStore.StorageManager.GenerateAssets(SessionAssetStore.AssetCategory)">
+            <summary>
+            Generate asset objects from the file manifests for a category.
+            </summary>
+            <param name="assetCategory">An asset category</param>
+            <returns>A list of Asset</returns>
+        </member>
+        <member name="M:SessionAssetStore.StorageManager.DownloadAsset(SessionAssetStore.Asset,System.String,System.IProgress{Google.Apis.Download.IDownloadProgress},System.Boolean)">
+            <summary>
+            Download a single asset.
+            </summary>
+            <param name="asset">The asset to download.</param>
+            <param name="destination">Where to save the asset.</param>
+            <param name="progress">An IProgress object to report download activities.</param>
+            <param name="update">Redownload and overwrite an existing asset of the same name.</param>
+        </member>
+        <member name="M:SessionAssetStore.StorageManager.DownloadAssetThumbnail(SessionAssetStore.Asset,System.String,System.IProgress{Google.Apis.Download.IDownloadProgress},System.Boolean)">
+            <summary>
+            Download the thumbnail of an asset.
+            </summary>
+            <param name="asset">The asset to download.</param>
+            <param name="destination">Where to save the thumbnail.</param>
+            <param name="progress">An IProgress object to report download activities.</param>
+            <param name="update">Redownload and overwrite an existing thumbnail of the same name.</param>
+        </member>
+        <member name="M:SessionAssetStore.StorageManager.UploadAsset(System.String,System.String,System.String,System.IProgress{Google.Apis.Upload.IUploadProgress}[])">
+            <summary>
+            Upload an asset to the storage server.
+            </summary>
+            <param name="assetManifest">The path of the JSON manifest</param>
+            <param name="asset">The path of the asset</param>
+            <param name="assetThumbnail">The path of the thumbnail of the asset</param>
+            <param name="progress">An array of IProgress objects to report download activities in this specific order: Manifest, Thumbnail, Asset.</param>
+        </member>
+    </members>
+</doc>
