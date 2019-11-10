@@ -11,6 +11,7 @@ namespace AssetStoreTest
         static void Main(string[] args)
         {
             Upload();
+            //Download();
             Console.ReadLine();
         }
 

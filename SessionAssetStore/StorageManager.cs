@@ -122,6 +122,8 @@ namespace SessionAssetStore
         /// <param name="progress">An array of IProgress objects to report download activities in this specific order: Manifest, Thumbnail, Asset.</param>
         public void UploadAsset(string assetManifest, string assetThumbnail, string asset, IProgress<IUploadProgress>[] progress = null)
         {
+            var options = new UploadObjectOptions();
+            options.PredefinedAcl = PredefinedObjectAcl.ProjectPrivate;
             Asset assetToUpload = ValidateManifest(assetManifest);
             if(!string.IsNullOrEmpty(assetToUpload.ConvertError))
             {
@@ -129,15 +131,15 @@ namespace SessionAssetStore
             }
             using (var stream = File.OpenRead(assetManifest))
             {
-                client.UploadObjectAsync(assetToUpload.Category, Path.GetFileName(assetManifest), null, stream, progress: progress[0]).Wait();
+                client.UploadObjectAsync(assetToUpload.Category, Path.GetFileName(assetManifest), null, stream, options: options, progress: progress[0]).Wait();
             }
             using (var stream = File.OpenRead(assetThumbnail))
             {
-                client.UploadObjectAsync(assetToUpload.Category, assetToUpload.Thumbnail, null, stream, progress: progress[1]).Wait();
+                client.UploadObjectAsync(assetToUpload.Category, assetToUpload.Thumbnail, null, stream, options: options, progress: progress[1]).Wait();
             }
             using (var stream = File.OpenRead(asset))
             {
-                client.UploadObjectAsync(assetToUpload.Category, assetToUpload.AssetName, null, stream, progress: progress[2]).Wait();
+                client.UploadObjectAsync(assetToUpload.Category, assetToUpload.AssetName, null, stream, options: options, progress: progress[2]).Wait();
             }
         }
 
