@@ -44,9 +44,9 @@ namespace AssetStoreTest
             {
                 Console.WriteLine(a.ToString());
                 Console.WriteLine("downloading thumbnail...");
-                manager.DownloadAssetThumbnail(a, Path.Combine("test", a.AssetName));
+                manager.DownloadAssetThumbnail(a, Path.Combine("test", a.Thumbnail));
                 Console.WriteLine("downloading asset...");
-                manager.DownloadAsset(a, Path.Combine("test", a.Thumbnail), new Progress<IDownloadProgress>(p => Console.WriteLine($"{a.Name}: status: {p.Status}")));
+                manager.DownloadAsset(a, Path.Combine("test", a.AssetName), new Progress<IDownloadProgress>(p => Console.WriteLine($"{a.Name}: status: {p.Status}")));
             }
             Console.WriteLine("done");
         }
