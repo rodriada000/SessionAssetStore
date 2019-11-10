@@ -143,6 +143,18 @@ namespace SessionAssetStore
             }
         }
 
+        /// <summary>
+        /// Deletes an asset from the storage server.
+        /// </summary>
+        /// <param name="assetManifest">The manifest file of the asset.</param>
+        public void DeleteAsset(string assetManifest)
+        {
+            Asset assetToDelete = ValidateManifest(assetManifest);
+            client.DeleteObjectAsync(assetToDelete.Category, assetManifest).Wait();
+            client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.AssetName).Wait();
+            client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.Thumbnail).Wait();            
+        }
+
         Asset ValidateManifest(string manifest)
         {
             Asset asset;

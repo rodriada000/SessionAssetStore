@@ -10,7 +10,7 @@ namespace AssetStoreTest
     {
         static void Main(string[] args)
         {
-            Upload();
+            //Upload();
             //Download();
             Console.ReadLine();
         }
