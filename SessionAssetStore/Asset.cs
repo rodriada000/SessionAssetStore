@@ -76,11 +76,10 @@ namespace SessionAssetStore
     public class AssetCategory
     {
         public string Value { get; set; }
-        private AssetCategory(string value) { Value = value; }
+        public AssetCategory(string value) { Value = value; }
 
         public static AssetCategory Maps { get { return new AssetCategory("session-maps"); } }
         public static AssetCategory Griptapes { get { return new AssetCategory("session-griptapes"); } }
-        public static AssetCategory Clothes { get { return new AssetCategory("session-clothes"); } }
         public static AssetCategory Hats { get { return new AssetCategory("session-hats"); } }
         public static AssetCategory Shirts { get { return new AssetCategory("session-shirts"); } }
         public static AssetCategory Pants { get { return new AssetCategory("session-pants"); } }
@@ -102,8 +101,6 @@ namespace SessionAssetStore
                     return Maps;
                 case ("session-griptapes"):
                     return Griptapes;
-                case ("session-clothes"):
-                    return Clothes;
                 case ("session-hats"):
                     return Hats;
                 case ("session-shirts"):

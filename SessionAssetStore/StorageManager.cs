@@ -9,6 +9,8 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using System.Reflection;
+using System.Diagnostics;
 
 namespace SessionAssetStore
 {
@@ -38,6 +40,16 @@ namespace SessionAssetStore
             client = await StorageClient.CreateAsync(credentials);
         }
 
+        internal List<AssetCategory> GetAllCategories()
+        {
+            List<AssetCategory> categories = new List<AssetCategory>();
+            PropertyInfo[] properties = typeof(AssetCategory).GetProperties(BindingFlags.Public | BindingFlags.Static);
+            foreach (PropertyInfo property in properties)
+            {
+                categories.Add(property.GetValue(null) as AssetCategory);
+            }
+            return categories;
+        }
 
         /// <summary>
         /// Fetch all manifests for a single category.
@@ -46,6 +58,7 @@ namespace SessionAssetStore
         /// <param name="progress">An IProgress object to report download activities.</param>
         public void GetAssetManifests(AssetCategory assetCategory, IProgress<IDownloadProgress> progress = null)
         {
+            if (client == null) throw new Exception("You must authenticate first.");
             string manifestPath = Path.Combine(MANIFESTS_TEMP, assetCategory.Value);
             // Delete the existing manifests if they exist, prevents old assets from being redownloaded.
             if (Directory.Exists(manifestPath))
@@ -67,6 +80,17 @@ namespace SessionAssetStore
         }
 
         /// <summary>
+        /// Gets the manifests for all categories.
+        /// </summary>
+        public void GetAllAssetManifests()
+        {     
+            foreach (AssetCategory cat in GetAllCategories())
+            {
+                GetAssetManifests(cat);     
+            }
+        }
+
+        /// <summary>
         /// Generate asset objects from the file manifests for a category.
         /// </summary>
         /// <param name="assetCategory">An asset category</param>
@@ -82,6 +106,20 @@ namespace SessionAssetStore
         }
 
         /// <summary>
+        /// Loads all Asset object from fetched manifests in memory.
+        /// </summary>
+        /// <returns>Complete list of asset objects</returns>
+        public List<Asset> GenerateAllAssets()
+        {
+            List<Asset> fullList = new List<Asset>();
+            foreach (AssetCategory cat in GetAllCategories())
+            {
+                fullList.AddRange(GenerateAssets(cat));
+            }
+            return fullList;
+        }
+
+        /// <summary>
         /// Download a single asset.
         /// </summary>
         /// <param name="asset">The asset to download.</param>
@@ -90,6 +128,7 @@ namespace SessionAssetStore
         /// <param name="update">Redownload and overwrite an existing asset of the same name.</param>
         public void DownloadAsset(Asset asset, string destination, IProgress<IDownloadProgress> progress = null, bool update = false)
         {
+            if (client == null) throw new Exception("You must authenticate first.");
             if (File.Exists(destination) && !update) { return; }
             using (var stream = File.OpenWrite(destination))
             {
@@ -106,6 +145,7 @@ namespace SessionAssetStore
         /// <param name="update">Redownload and overwrite an existing thumbnail of the same name.</param>
         public void DownloadAssetThumbnail(Asset asset, string destination, IProgress<IDownloadProgress> progress = null, bool update = false)
         {
+            if (client == null) throw new Exception("You must authenticate first.");
             if (File.Exists(destination) && !update) { return; }
             using (var stream = File.OpenWrite(destination))
             {
@@ -122,6 +162,7 @@ namespace SessionAssetStore
         /// <param name="progress">An array of IProgress objects to report download activities in this specific order: Manifest, Thumbnail, Asset.</param>
         public void UploadAsset(string assetManifest, string assetThumbnail, string asset, IProgress<IUploadProgress>[] progress = null)
         {
+            if (client == null) throw new Exception("You must authenticate first.");
             var options = new UploadObjectOptions();
             options.PredefinedAcl = PredefinedObjectAcl.ProjectPrivate;
             Asset assetToUpload = ValidateManifest(assetManifest);
@@ -149,6 +190,7 @@ namespace SessionAssetStore
         /// <param name="assetManifest">The manifest file of the asset.</param>
         public void DeleteAsset(string assetManifest)
         {
+            if (client == null) throw new Exception("You must authenticate first.");
             Asset assetToDelete = ValidateManifest(assetManifest);
             client.DeleteObjectAsync(assetToDelete.Category, assetManifest).Wait();
             client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.AssetName).Wait();

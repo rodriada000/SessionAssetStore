@@ -90,12 +90,23 @@
             <param name="assetCategory">The category of asset manifest to fetch</param>
             <param name="progress">An IProgress object to report download activities.</param>
         </member>
+        <member name="M:SessionAssetStore.StorageManager.GetAllAssetManifests">
+            <summary>
+            Gets the manifests for all categories.
+            </summary>
+        </member>
         <member name="M:SessionAssetStore.StorageManager.GenerateAssets(SessionAssetStore.AssetCategory)">
             <summary>
             Generate asset objects from the file manifests for a category.
             </summary>
             <param name="assetCategory">An asset category</param>
             <returns>A list of Asset</returns>
+        </member>
+        <member name="M:SessionAssetStore.StorageManager.GenerateAllAssets">
+            <summary>
+            Loads all Asset object from fetched manifests in memory.
+            </summary>
+            <returns>Complete list of asset objects</returns>
         </member>
         <member name="M:SessionAssetStore.StorageManager.DownloadAsset(SessionAssetStore.Asset,System.String,System.IProgress{Google.Apis.Download.IDownloadProgress},System.Boolean)">
             <summary>
