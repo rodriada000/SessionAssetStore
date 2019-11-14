@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Gab\\Source\\Repos\\SessionAssetStore\\AssetStoreTest\\AssetStoreTest.csproj": {}
+    "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\AssetStoreTest\\AssetStoreTest.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Gab\\Source\\Repos\\SessionAssetStore\\AssetStoreTest\\AssetStoreTest.csproj": {
+    "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\AssetStoreTest\\AssetStoreTest.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Gab\\Source\\Repos\\SessionAssetStore\\AssetStoreTest\\AssetStoreTest.csproj",
+        "projectUniqueName": "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\AssetStoreTest\\AssetStoreTest.csproj",
         "projectName": "AssetStoreTest",
-        "projectPath": "C:\\Users\\Gab\\Source\\Repos\\SessionAssetStore\\AssetStoreTest\\AssetStoreTest.csproj",
+        "projectPath": "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\AssetStoreTest\\AssetStoreTest.csproj",
         "packagesPath": "C:\\Users\\Gab\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Gab\\Source\\Repos\\SessionAssetStore\\AssetStoreTest\\obj\\",
+        "outputPath": "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\AssetStoreTest\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
@@ -30,8 +30,8 @@
         "frameworks": {
           "netcoreapp3.0": {
             "projectReferences": {
-              "C:\\Users\\Gab\\Source\\Repos\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj": {
-                "projectPath": "C:\\Users\\Gab\\Source\\Repos\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj"
+              "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj": {
+                "projectPath": "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj"
               }
             }
           }
@@ -63,14 +63,14 @@
         }
       }
     },
-    "C:\\Users\\Gab\\Source\\Repos\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj": {
+    "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Gab\\Source\\Repos\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj",
+        "projectUniqueName": "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj",
         "projectName": "SessionAssetStore",
-        "projectPath": "C:\\Users\\Gab\\Source\\Repos\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj",
+        "projectPath": "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj",
         "packagesPath": "C:\\Users\\Gab\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Gab\\Source\\Repos\\SessionAssetStore\\SessionAssetStore\\obj\\",
+        "outputPath": "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\SessionAssetStore\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

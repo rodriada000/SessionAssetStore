@@ -135,11 +135,18 @@
             <param name="assetThumbnail">The path of the thumbnail of the asset</param>
             <param name="progress">An array of IProgress objects to report download activities in this specific order: Manifest, Thumbnail, Asset.</param>
         </member>
-        <member name="M:SessionAssetStore.StorageManager.DeleteAsset(System.String)">
+        <member name="M:SessionAssetStore.StorageManager.DeleteAsset(System.String,System.String)">
             <summary>
             Deletes an asset from the storage server.
             </summary>
-            <param name="assetManifest">The manifest file of the asset.</param>
+            <param name="manifestName">The manifest file of the asset.</param>
+        </member>
+        <member name="M:SessionAssetStore.StorageManager.DeleteAsset(System.String,SessionAssetStore.Asset)">
+            <summary>
+            Deletes an asset from the storage server.
+            </summary>
+            <param name="manifestName">name of the manifest file on the server.</param>
+            <param name="assetToDelete"> Asset to delete </param>
         </member>
     </members>
 </doc>

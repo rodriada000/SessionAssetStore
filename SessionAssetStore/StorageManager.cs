@@ -30,6 +30,8 @@ namespace SessionAssetStore
         /// </summary>
         public StorageClient client;
 
+        public static readonly string PROJECTID = "sessionassetstore";
+
         /// <summary>
         /// Authenticates to the Google Cloud Storage API. Provide custom credentials to authenticate with modders rights.
         /// </summary>
@@ -67,14 +69,25 @@ namespace SessionAssetStore
                 Directory.Delete(manifestPath, true);
             }
             Directory.CreateDirectory(manifestPath);
-            var files = client.ListObjects(assetCategory.Value);
-            foreach (var file in files)
+            var buckets = client.ListBuckets(PROJECTID);
+            foreach (var bucket in buckets)
             {
-                if (file.Name.EndsWith(".json"))
+                var files = client.ListObjects(bucket.Name);
+                foreach (var file in files)
                 {
-                    using (var stream = File.OpenWrite(Path.Combine(manifestPath, file.Name)))
+                    if (file.Name.EndsWith(".json"))
                     {
-                        client.DownloadObjectAsync(file, stream, progress: progress).Wait();
+                        Debug.WriteLine(bucket.Name);
+                        if (file.Metadata.ContainsKey("category"))
+                        {
+                            if (file.Metadata["category"] == assetCategory.Value)
+                            {
+                                using (var stream = File.OpenWrite(Path.Combine(manifestPath, file.Name)))
+                                {
+                                    client.DownloadObjectAsync(file, stream, progress: progress).Wait();
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -136,7 +149,7 @@ namespace SessionAssetStore
             if (File.Exists(destination) && !update) { return; }
             using (var stream = File.OpenWrite(destination))
             {
-                client.DownloadObjectAsync(asset.assetCategory.Value, asset.AssetName, stream, progress: progress).Wait();
+                client.DownloadObjectAsync(GetBucketName(asset.AssetName), asset.AssetName, stream, progress: progress).Wait();
             }
         }
 
@@ -153,8 +166,25 @@ namespace SessionAssetStore
             if (File.Exists(destination) && !update) { return; }
             using (var stream = File.OpenWrite(destination))
             {
-                client.DownloadObjectAsync(asset.assetCategory.Value, asset.Thumbnail, stream, progress: progress).Wait();
+                client.DownloadObjectAsync(GetBucketName(asset.AssetName), asset.Thumbnail, stream, progress: progress).Wait();
             }
+        }
+
+        string GetBucketName(string fileName)
+        {
+            var buckets = client.ListBuckets(PROJECTID);
+            foreach(var bucket in buckets)
+            {
+                var files = client.ListObjects(bucket.Name);
+                foreach(var file in files)
+                {
+                    if (file.Name == fileName)
+                    {
+                        return bucket.Name;
+                    }
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -167,24 +197,51 @@ namespace SessionAssetStore
         public void UploadAsset(string assetManifest, string assetThumbnail, string asset, IProgress<IUploadProgress>[] progress = null)
         {
             if (client == null) throw new Exception("You must authenticate first.");
-            var options = new UploadObjectOptions();
-            options.PredefinedAcl = PredefinedObjectAcl.ProjectPrivate;
             Asset assetToUpload = ValidateManifest(assetManifest);
-            if(!string.IsNullOrEmpty(assetToUpload.ConvertError))
+            if (!string.IsNullOrEmpty(assetToUpload.ConvertError))
             {
                 throw new Exception($"Invalid asset manifest: {assetToUpload.ConvertError}");
             }
+
+            var manifestObject = new Google.Apis.Storage.v1.Data.Object()
+            {
+                Bucket = assetToUpload.Author,
+                Name = assetToUpload.AssetName,
+                Metadata = new Dictionary<string, string>
+                {
+                    { "category", assetToUpload.assetCategory.Value}
+                }
+            };
+            var thumnailObject = new Google.Apis.Storage.v1.Data.Object()
+            {
+                Bucket = assetToUpload.Author,
+                Name = assetToUpload.Thumbnail,
+                Metadata = new Dictionary<string, string>
+                {
+                    { "category", assetToUpload.assetCategory.Value}
+                }
+            };
+            var assetObject = new Google.Apis.Storage.v1.Data.Object()
+            {
+                Bucket = assetToUpload.Author,
+                Name = assetToUpload.Name,
+                Metadata = new Dictionary<string, string>
+                {
+                    { "category", assetToUpload.assetCategory.Value}
+                }
+            };
+
             using (var stream = File.OpenRead(assetManifest))
             {
-                client.UploadObjectAsync(assetToUpload.Category, Path.GetFileName(assetManifest), null, stream, options: options, progress: progress[0]).Wait();
+                client.UploadObjectAsync(manifestObject, stream, progress: progress[0]);
             }
             using (var stream = File.OpenRead(assetThumbnail))
             {
-                client.UploadObjectAsync(assetToUpload.Category, assetToUpload.Thumbnail, null, stream, options: options, progress: progress[1]).Wait();
+                client.UploadObjectAsync(thumnailObject, stream, progress: progress[1]).Wait();
             }
             using (var stream = File.OpenRead(asset))
             {
-                client.UploadObjectAsync(assetToUpload.Category, assetToUpload.AssetName, null, stream, options: options, progress: progress[2]).Wait();
+                client.UploadObjectAsync(assetObject, stream, progress: progress[2]).Wait();
             }
         }
 
