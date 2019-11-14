@@ -78,7 +78,7 @@ namespace SessionAssetStore
                     if (file.Name.EndsWith(".json"))
                     {
                         Debug.WriteLine(bucket.Name);
-                        if (file.Metadata.ContainsKey("category"))
+                        if (if file.Metadata != null && file.Metadata.ContainsKey("category"))
                         {
                             if (file.Metadata["category"] == assetCategory.Value)
                             {
