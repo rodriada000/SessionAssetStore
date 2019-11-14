@@ -190,10 +190,11 @@ namespace SessionAssetStore
         /// <summary>
         /// Upload an asset to the storage server.
         /// </summary>
-        /// <param name="assetManifest">The path of the JSON manifest</param>
-        /// <param name="asset">The path of the asset</param>
-        /// <param name="assetThumbnail">The path of the thumbnail of the asset</param>
-        /// <param name="progress">An array of IProgress objects to report download activities in this specific order: Manifest, Thumbnail, Asset.</param>
+        /// <param name="assetManifest"> absolute path to the json manifest file </param>
+        /// <param name="assetThumbnail"> absolute path to the thumbnail image file </param>
+        /// <param name="asset"> absolute path to the asset file (e.g. a .zip file) </param>
+        /// <param name="bucketName"> Name of google cloud storage bucket to upload to </param>
+        /// <param name="progress"> array of IUpload representing progress for [Manifest, Thumbnail, File] in that order. </param>
         public void UploadAsset(string assetManifest, string assetThumbnail, string asset, string bucketName, IProgress<IUploadProgress>[] progress = null)
         {
             if (client == null) throw new Exception("You must authenticate first.");
@@ -206,7 +207,7 @@ namespace SessionAssetStore
             var manifestObject = new Google.Apis.Storage.v1.Data.Object()
             {
                 Bucket = bucketName,
-                Name = assetToUpload.AssetName,
+                Name = Path.GetFileName(assetManifest),
                 Metadata = new Dictionary<string, string>
                 {
                     { "category", assetToUpload.assetCategory.Value}
@@ -224,7 +225,7 @@ namespace SessionAssetStore
             var assetObject = new Google.Apis.Storage.v1.Data.Object()
             {
                 Bucket = bucketName,
-                Name = assetToUpload.Name,
+                Name = assetToUpload.AssetName,
                 Metadata = new Dictionary<string, string>
                 {
                     { "category", assetToUpload.assetCategory.Value}
@@ -233,7 +234,7 @@ namespace SessionAssetStore
 
             using (var stream = File.OpenRead(assetManifest))
             {
-                client.UploadObjectAsync(manifestObject, stream, progress: progress[0]);
+                client.UploadObjectAsync(manifestObject, stream, progress: progress[0]).Wait();
             }
             using (var stream = File.OpenRead(assetThumbnail))
             {
@@ -249,13 +250,13 @@ namespace SessionAssetStore
         /// Deletes an asset from the storage server.
         /// </summary>
         /// <param name="manifestName">The manifest file of the asset.</param>
-        public void DeleteAsset(string manifestName, string absolutePathToManifest)
+        public void DeleteAsset(string bucketName, string manifestName, string absolutePathToManifest)
         {
             if (client == null) throw new Exception("You must authenticate first.");
             Asset assetToDelete = ValidateManifest(absolutePathToManifest);
-            client.DeleteObjectAsync(assetToDelete.Category, manifestName).Wait();
-            client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.AssetName).Wait();
-            client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.Thumbnail).Wait();            
+            client.DeleteObjectAsync(bucketName, manifestName).Wait();
+            client.DeleteObjectAsync(bucketName, assetToDelete.AssetName).Wait();
+            client.DeleteObjectAsync(bucketName, assetToDelete.Thumbnail).Wait();            
         }
 
         /// <summary>
@@ -263,12 +264,12 @@ namespace SessionAssetStore
         /// </summary>
         /// <param name="manifestName">name of the manifest file on the server.</param>
         /// <param name="assetToDelete"> Asset to delete </param>
-        public void DeleteAsset(string manifestName, Asset assetToDelete)
+        public void DeleteAsset(string bucketName, string manifestName, Asset assetToDelete)
         {
             if (client == null) throw new Exception("You must authenticate first.");
-            client.DeleteObjectAsync(assetToDelete.Category, manifestName).Wait();
-            client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.AssetName).Wait();
-            client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.Thumbnail).Wait();
+            client.DeleteObjectAsync(bucketName, manifestName).Wait();
+            client.DeleteObjectAsync(bucketName, assetToDelete.AssetName).Wait();
+            client.DeleteObjectAsync(bucketName, assetToDelete.Thumbnail).Wait();
         }
 
         /// <summary>
