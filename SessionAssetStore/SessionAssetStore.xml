@@ -126,7 +126,7 @@
             <param name="progress">An IProgress object to report download activities.</param>
             <param name="update">Redownload and overwrite an existing thumbnail of the same name.</param>
         </member>
-        <member name="M:SessionAssetStore.StorageManager.UploadAsset(System.String,System.String,System.String,System.IProgress{Google.Apis.Upload.IUploadProgress}[])">
+        <member name="M:SessionAssetStore.StorageManager.UploadAsset(System.String,System.String,System.String,System.String,System.IProgress{Google.Apis.Upload.IUploadProgress}[])">
             <summary>
             Upload an asset to the storage server.
             </summary>
@@ -147,6 +147,12 @@
             </summary>
             <param name="manifestName">name of the manifest file on the server.</param>
             <param name="assetToDelete"> Asset to delete </param>
+        </member>
+        <member name="M:SessionAssetStore.StorageManager.ListBuckets">
+            <summary>
+            List all custom buckets
+            </summary>
+            <returns></returns>
         </member>
     </members>
 </doc>

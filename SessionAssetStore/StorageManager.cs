@@ -78,7 +78,7 @@ namespace SessionAssetStore
                     if (file.Name.EndsWith(".json"))
                     {
                         Debug.WriteLine(bucket.Name);
-                        if (if file.Metadata != null && file.Metadata.ContainsKey("category"))
+                        if (file.Metadata != null && file.Metadata.ContainsKey("category"))
                         {
                             if (file.Metadata["category"] == assetCategory.Value)
                             {
@@ -194,7 +194,7 @@ namespace SessionAssetStore
         /// <param name="asset">The path of the asset</param>
         /// <param name="assetThumbnail">The path of the thumbnail of the asset</param>
         /// <param name="progress">An array of IProgress objects to report download activities in this specific order: Manifest, Thumbnail, Asset.</param>
-        public void UploadAsset(string assetManifest, string assetThumbnail, string asset, IProgress<IUploadProgress>[] progress = null)
+        public void UploadAsset(string assetManifest, string assetThumbnail, string asset, string bucketName, IProgress<IUploadProgress>[] progress = null)
         {
             if (client == null) throw new Exception("You must authenticate first.");
             Asset assetToUpload = ValidateManifest(assetManifest);
@@ -205,7 +205,7 @@ namespace SessionAssetStore
 
             var manifestObject = new Google.Apis.Storage.v1.Data.Object()
             {
-                Bucket = assetToUpload.Author,
+                Bucket = bucketName,
                 Name = assetToUpload.AssetName,
                 Metadata = new Dictionary<string, string>
                 {
@@ -214,7 +214,7 @@ namespace SessionAssetStore
             };
             var thumnailObject = new Google.Apis.Storage.v1.Data.Object()
             {
-                Bucket = assetToUpload.Author,
+                Bucket = bucketName,
                 Name = assetToUpload.Thumbnail,
                 Metadata = new Dictionary<string, string>
                 {
@@ -223,7 +223,7 @@ namespace SessionAssetStore
             };
             var assetObject = new Google.Apis.Storage.v1.Data.Object()
             {
-                Bucket = assetToUpload.Author,
+                Bucket = bucketName,
                 Name = assetToUpload.Name,
                 Metadata = new Dictionary<string, string>
                 {
@@ -269,6 +269,24 @@ namespace SessionAssetStore
             client.DeleteObjectAsync(assetToDelete.Category, manifestName).Wait();
             client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.AssetName).Wait();
             client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.Thumbnail).Wait();
+        }
+
+        /// <summary>
+        /// List all custom buckets
+        /// </summary>
+        /// <returns></returns>
+        public List<string> ListBuckets()
+        {
+            var result = new List<string>();
+            var buckets = client.ListBuckets(PROJECTID);
+            foreach(var bucket in buckets)
+            {
+                if(!bucket.Name.StartsWith("session-"))
+                {
+                    result.Add(bucket.Name);
+                }
+            }
+            return result;
         }
 
         Asset ValidateManifest(string manifest)
