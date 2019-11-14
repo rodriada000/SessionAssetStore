@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Reflection;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace SessionAssetStore
 {
@@ -33,7 +34,7 @@ namespace SessionAssetStore
         /// Authenticates to the Google Cloud Storage API. Provide custom credentials to authenticate with modders rights.
         /// </summary>
         /// <param name="credentialsFile">The credentials to use to authenticate. Leave null for default read-only.</param>
-        public async void Authenticate(string credentialsFile = null)
+        public async Task Authenticate(string credentialsFile = null)
         {
             credentialsFile = credentialsFile == null ? "modmanager.json" : credentialsFile;
             var credentials = GoogleCredential.FromJson(File.ReadAllText(credentialsFile));
@@ -98,7 +99,10 @@ namespace SessionAssetStore
         public List<Asset> GenerateAssets(AssetCategory assetCategory)
         {
             List<Asset> buffer = new List<Asset>();
-            foreach (string file in Directory.GetFiles(Path.Combine(MANIFESTS_TEMP, assetCategory.Value), "*.json"))
+            string pathToFolder = Path.Combine(MANIFESTS_TEMP, assetCategory.Value);
+            Directory.CreateDirectory(pathToFolder);
+
+            foreach (string file in Directory.GetFiles(pathToFolder, "*.json"))
             {
                 buffer.Add(JsonConvert.DeserializeObject<Asset>(File.ReadAllText(file)));
             }
@@ -187,14 +191,27 @@ namespace SessionAssetStore
         /// <summary>
         /// Deletes an asset from the storage server.
         /// </summary>
-        /// <param name="assetManifest">The manifest file of the asset.</param>
-        public void DeleteAsset(string assetManifest)
+        /// <param name="manifestName">The manifest file of the asset.</param>
+        public void DeleteAsset(string manifestName, string absolutePathToManifest)
         {
             if (client == null) throw new Exception("You must authenticate first.");
-            Asset assetToDelete = ValidateManifest(assetManifest);
-            client.DeleteObjectAsync(assetToDelete.Category, assetManifest).Wait();
+            Asset assetToDelete = ValidateManifest(absolutePathToManifest);
+            client.DeleteObjectAsync(assetToDelete.Category, manifestName).Wait();
             client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.AssetName).Wait();
             client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.Thumbnail).Wait();            
+        }
+
+        /// <summary>
+        /// Deletes an asset from the storage server.
+        /// </summary>
+        /// <param name="manifestName">name of the manifest file on the server.</param>
+        /// <param name="assetToDelete"> Asset to delete </param>
+        public void DeleteAsset(string manifestName, Asset assetToDelete)
+        {
+            if (client == null) throw new Exception("You must authenticate first.");
+            client.DeleteObjectAsync(assetToDelete.Category, manifestName).Wait();
+            client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.AssetName).Wait();
+            client.DeleteObjectAsync(assetToDelete.Category, assetToDelete.Thumbnail).Wait();
         }
 
         Asset ValidateManifest(string manifest)
