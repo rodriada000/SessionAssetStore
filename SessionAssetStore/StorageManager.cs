@@ -117,7 +117,13 @@ namespace SessionAssetStore
 
             foreach (string file in Directory.GetFiles(pathToFolder, "*.json"))
             {
-                buffer.Add(JsonConvert.DeserializeObject<Asset>(File.ReadAllText(file)));
+                using (FileStream stream = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        buffer.Add(JsonConvert.DeserializeObject<Asset>(reader.ReadToEnd()));
+                    }
+                }
             }
             return buffer;
         }
