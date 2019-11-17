@@ -34,6 +34,10 @@ namespace SessionAssetStore
         /// The category of the asset as a string
         /// </summary>
         public string Category { get; }
+        /// <summary>
+        /// The date (UTC) the asset was last uploaded/edited.
+        /// </summary>
+        public DateTime UpdatedDate { get; }
 
         [JsonIgnore]
         internal AssetCategory assetCategory { get; }
@@ -44,7 +48,7 @@ namespace SessionAssetStore
         /// Default constructor
         /// </summary>
         [JsonConstructor]
-        public Asset(string Name, string Description, string Author, string AssetName, string Thumbnail, string Category)
+        public Asset(string Name, string Description, string Author, string AssetName, string Thumbnail, string Category, string UpdatedDate)
         {
             this.Name = Name;
             this.Description = Description;
@@ -52,6 +56,7 @@ namespace SessionAssetStore
             this.AssetName = AssetName;
             this.Thumbnail = Thumbnail;
             this.Category = Category;
+            this.UpdatedDate = UpdatedDate == null ? DateTime.MinValue : DateTime.Parse(UpdatedDate);
             assetCategory = AssetCategory.FromString(Category);
         }
 
