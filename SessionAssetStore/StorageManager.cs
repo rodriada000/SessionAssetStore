@@ -1,17 +1,18 @@
-﻿using Google.Api.Gax;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Services;
-using Google.Apis.Storage.v1;
-using Google.Cloud.Storage.V1;
-using Google.Apis.Download;
-using Google.Apis.Upload;
-using System;
+﻿using System;
 using System.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Reflection;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Amazon;
+using Amazon.S3;
+using Amazon.Runtime;
+using Amazon.S3.Model;
+using Amazon.S3.Util;
+using System.Linq;
+using Amazon.S3.Transfer;
+using System.Threading;
 
 namespace SessionAssetStore
 {
@@ -28,19 +29,35 @@ namespace SessionAssetStore
         /// <summary>
         /// Shared client object
         /// </summary>
-        public StorageClient client;
+        public IAmazonS3 client;
 
-        public static readonly string PROJECTID = "sessionassetstore";
+        /// <summary>
+        /// Transfer helper for aws
+        /// </summary>
+        public TransferUtility transfer;
 
         /// <summary>
         /// Authenticates to the Google Cloud Storage API. Provide custom credentials to authenticate with modders rights.
         /// </summary>
         /// <param name="credentialsFile">The credentials to use to authenticate. Leave null for default read-only.</param>
-        public async Task Authenticate(string credentialsFile = null)
+        public void Authenticate(string credentialsFile = null)
         {
-            credentialsFile = credentialsFile == null ? "modmanager.json" : credentialsFile;
-            var credentials = GoogleCredential.FromJson(File.ReadAllText(credentialsFile));
-            client = await StorageClient.CreateAsync(credentials);
+            credentialsFile = credentialsFile == null ? "modmanager.csv" : credentialsFile;
+            var creds = ReadCSV(credentialsFile);
+            var endpoint = "https://s3.wasabisys.com"; //US-East-1 endpoint
+            var config = new AmazonS3Config { ServiceURL = endpoint };
+            client = new AmazonS3Client(creds["Access Key Id"], creds["Secret Access Key"], config);            
+            transfer = new TransferUtility(client);
+        }
+
+        Dictionary<string, string> ReadCSV(string filePath)
+        {
+            if (!File.Exists(filePath)) throw new FileNotFoundException();
+            var lines = File.ReadAllLines(filePath);
+            if (lines.Length < 2) throw new Exception("Bad credentials file format.");
+            var header = lines[0].Split(',');
+            var data = lines[1].Split(',');
+            return header.Zip(data, (h, d) => new { h, d }).ToDictionary(item => item.h, item => item.d);
         }
 
         internal List<AssetCategory> GetAllCategories()
@@ -59,7 +76,7 @@ namespace SessionAssetStore
         /// </summary>
         /// <param name="assetCategory">The category of asset manifest to fetch</param>
         /// <param name="progress">An IProgress object to report download activities.</param>
-        public void GetAssetManifests(AssetCategory assetCategory, IProgress<IDownloadProgress> progress = null)
+        public async void GetAssetManifests(AssetCategory assetCategory, EventHandler<WriteObjectProgressArgs> progress = null)
         {
             if (client == null) throw new Exception("You must authenticate first.");
             string manifestPath = Path.Combine(MANIFESTS_TEMP, assetCategory.Value);
@@ -69,22 +86,23 @@ namespace SessionAssetStore
                 Directory.Delete(manifestPath, true);
             }
             Directory.CreateDirectory(manifestPath);
-            var buckets = client.ListBuckets(PROJECTID);
-            foreach (var bucket in buckets)
+            var buckets = await client.ListBucketsAsync();
+            foreach (var bucket in buckets.Buckets)
             {
-                var files = client.ListObjects(bucket.Name);
-                foreach (var file in files)
+                var files = await client.ListObjectsAsync(bucket.BucketName);
+                foreach (var file in files.S3Objects)
                 {
-                    if (file.Name.EndsWith(".json"))
+                    if (file.Key.EndsWith(".json"))
                     {
-                        Debug.WriteLine(bucket.Name);
-                        if (file.Metadata != null && file.Metadata.ContainsKey("category"))
+                        var metadata = client.GetObjectMetadataAsync(bucket.BucketName, file.Key).Result.Metadata;
+                        if (metadata != null)
                         {
-                            if (file.Metadata["category"] == assetCategory.Value)
+                            if (metadata["category"] == assetCategory.Value)
                             {
-                                using (var stream = File.OpenWrite(Path.Combine(manifestPath, file.Name)))
+                                using (var response = client.GetObjectAsync(bucket.BucketName, file.Key))
                                 {
-                                    client.DownloadObjectAsync(file, stream, progress: progress).Wait();
+                                    response.Result.WriteObjectProgressEvent += progress;
+                                    await response.Result.WriteResponseStreamToFileAsync(Path.Combine(manifestPath, file.Key), false, new CancellationToken());
                                 }
                             }
                         }
@@ -149,14 +167,19 @@ namespace SessionAssetStore
         /// <param name="destination">Where to save the asset.</param>
         /// <param name="progress">An IProgress object to report download activities.</param>
         /// <param name="update">Redownload and overwrite an existing asset of the same name.</param>
-        public void DownloadAsset(Asset asset, string destination, IProgress<IDownloadProgress> progress = null, bool update = false)
+        public async void DownloadAsset(Asset asset, string destination, EventHandler<WriteObjectProgressArgs> progress = null, bool update = false)
         {
             if (client == null) throw new Exception("You must authenticate first.");
             if (File.Exists(destination) && !update) { return; }
-            using (var stream = File.OpenWrite(destination))
+
+            var downloadRequest = new TransferUtilityDownloadRequest()
             {
-                client.DownloadObjectAsync(GetBucketName(asset.AssetName), asset.AssetName, stream, progress: progress).Wait();
-            }
+                BucketName = GetBucketName(asset.AssetName),
+                Key = asset.AssetName,
+                FilePath = destination
+            };
+            downloadRequest.WriteObjectProgressEvent += progress;
+            await transfer.DownloadAsync(downloadRequest);
         }
 
         /// <summary>
@@ -166,27 +189,32 @@ namespace SessionAssetStore
         /// <param name="destination">Where to save the thumbnail.</param>
         /// <param name="progress">An IProgress object to report download activities.</param>
         /// <param name="update">Redownload and overwrite an existing thumbnail of the same name.</param>
-        public void DownloadAssetThumbnail(Asset asset, string destination, IProgress<IDownloadProgress> progress = null, bool update = false)
+        public async void DownloadAssetThumbnail(Asset asset, string destination, EventHandler<WriteObjectProgressArgs> progress = null, bool update = false)
         {
             if (client == null) throw new Exception("You must authenticate first.");
             if (File.Exists(destination) && !update) { return; }
-            using (var stream = File.OpenWrite(destination))
+
+            var downloadRequest = new TransferUtilityDownloadRequest()
             {
-                client.DownloadObjectAsync(GetBucketName(asset.AssetName), asset.Thumbnail, stream, progress: progress).Wait();
-            }
+                BucketName = GetBucketName(asset.AssetName),
+                Key = asset.Thumbnail,
+                FilePath = destination
+            };
+            downloadRequest.WriteObjectProgressEvent += progress;
+            await transfer.DownloadAsync(downloadRequest);
         }
 
         string GetBucketName(string fileName)
         {
-            var buckets = client.ListBuckets(PROJECTID);
-            foreach(var bucket in buckets)
+            var buckets = client.ListBucketsAsync().Result;
+            foreach(var bucket in buckets.Buckets)
             {
-                var files = client.ListObjects(bucket.Name);
+                var files = client.ListObjectsAsync(bucket.BucketName).Result.S3Objects;
                 foreach(var file in files)
                 {
-                    if (file.Name == fileName)
+                    if (file.Key== fileName)
                     {
-                        return bucket.Name;
+                        return bucket.BucketName;
                     }
                 }
             }
@@ -201,7 +229,7 @@ namespace SessionAssetStore
         /// <param name="asset"> absolute path to the asset file (e.g. a .zip file) </param>
         /// <param name="bucketName"> Name of google cloud storage bucket to upload to </param>
         /// <param name="progress"> array of IUpload representing progress for [Manifest, Thumbnail, File] in that order. </param>
-        public void UploadAsset(string assetManifest, string assetThumbnail, string asset, string bucketName, IProgress<IUploadProgress>[] progress = null)
+        public async void UploadAsset(string assetManifest, string assetThumbnail, string asset, string bucketName, EventHandler<UploadProgressArgs> progress = null)
         {
             if (client == null) throw new Exception("You must authenticate first.");
             Asset assetToUpload = ValidateManifest(assetManifest);
@@ -210,45 +238,42 @@ namespace SessionAssetStore
                 throw new Exception($"Invalid asset manifest: {assetToUpload.ConvertError}");
             }
 
-            var manifestObject = new Google.Apis.Storage.v1.Data.Object()
+            var manifestObject = new TransferUtilityUploadRequest()
             {
-                Bucket = bucketName,
-                Name = Path.GetFileName(assetManifest),
-                Metadata = new Dictionary<string, string>
-                {
-                    { "category", assetToUpload.assetCategory.Value}
-                }
+                BucketName = bucketName,
+                Key= Path.GetFileName(assetManifest)
             };
-            var thumnailObject = new Google.Apis.Storage.v1.Data.Object()
+            var thumbnailObject = new TransferUtilityUploadRequest()
             {
-                Bucket = bucketName,
-                Name = assetToUpload.Thumbnail,
-                Metadata = new Dictionary<string, string>
-                {
-                    { "category", assetToUpload.assetCategory.Value}
-                }
+                BucketName = bucketName,
+                Key = assetToUpload.Thumbnail
             };
-            var assetObject = new Google.Apis.Storage.v1.Data.Object()
+            var assetObject = new TransferUtilityUploadRequest()
             {
-                Bucket = bucketName,
-                Name = assetToUpload.AssetName,
-                Metadata = new Dictionary<string, string>
-                {
-                    { "category", assetToUpload.assetCategory.Value}
-                }
+                BucketName = bucketName,
+                Key= assetToUpload.AssetName                
             };
 
             using (var stream = File.OpenRead(assetManifest))
             {
-                client.UploadObjectAsync(manifestObject, stream, progress: progress[0]).Wait();
+                manifestObject.InputStream = stream;
+                manifestObject.Metadata.Add("category", assetToUpload.assetCategory.Value);
+                manifestObject.UploadProgressEvent += progress;
+                await transfer.UploadAsync(manifestObject);
             }
             using (var stream = File.OpenRead(assetThumbnail))
             {
-                client.UploadObjectAsync(thumnailObject, stream, progress: progress[1]).Wait();
+                thumbnailObject.InputStream = stream;
+                thumbnailObject.Metadata.Add("category", assetToUpload.assetCategory.Value);
+                thumbnailObject.UploadProgressEvent += progress;
+                await transfer.UploadAsync(thumbnailObject);
             }
             using (var stream = File.OpenRead(asset))
             {
-                client.UploadObjectAsync(assetObject, stream, progress: progress[2]).Wait();
+                assetObject.InputStream = stream;
+                assetObject.Metadata.Add("category", assetToUpload.assetCategory.Value);
+                assetObject.UploadProgressEvent += progress;
+                await transfer.UploadAsync(assetObject);
             }
         }
 
@@ -262,7 +287,7 @@ namespace SessionAssetStore
             Asset assetToDelete = ValidateManifest(absolutePathToManifest);
             client.DeleteObjectAsync(bucketName, manifestName).Wait();
             client.DeleteObjectAsync(bucketName, assetToDelete.AssetName).Wait();
-            client.DeleteObjectAsync(bucketName, assetToDelete.Thumbnail).Wait();            
+            client.DeleteObjectAsync(bucketName, assetToDelete.Thumbnail).Wait();               
         }
 
         /// <summary>
@@ -285,12 +310,12 @@ namespace SessionAssetStore
         public List<string> ListBuckets()
         {
             var result = new List<string>();
-            var buckets = client.ListBuckets(PROJECTID);
+            var buckets = client.ListBucketsAsync().Result.Buckets;
             foreach(var bucket in buckets)
             {
-                if(!bucket.Name.StartsWith("session-"))
+                if(!bucket.BucketName.StartsWith("session-"))
                 {
-                    result.Add(bucket.Name);
+                    result.Add(bucket.BucketName);
                 }
             }
             return result;

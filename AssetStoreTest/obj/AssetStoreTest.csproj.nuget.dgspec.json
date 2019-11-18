@@ -64,7 +64,7 @@
       }
     },
     "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj": {
-      "version": "1.0.0",
+      "version": "1.0.2",
       "restore": {
         "projectUniqueName": "C:\\Users\\Gab\\Documents\\GitHub\\SessionAssetStore\\SessionAssetStore\\SessionAssetStore.csproj",
         "projectName": "SessionAssetStore",
@@ -100,9 +100,9 @@
       "frameworks": {
         "netstandard2.0": {
           "dependencies": {
-            "Google.Cloud.Storage.V1": {
+            "AWSSDK.S3": {
               "target": "Package",
-              "version": "[2.3.0, )"
+              "version": "[3.3.106.6, )"
             },
             "NETStandard.Library": {
               "suppressParent": "All",
