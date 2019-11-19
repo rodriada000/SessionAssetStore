@@ -48,7 +48,7 @@ namespace SessionAssetStore
             var config = new AmazonS3Config { ServiceURL = endpoint };
 
             var s3Credentials = new BasicAWSCredentials(creds["Access Key Id"], creds["Secret Access Key"]);
-            client = new AmazonS3Client(s3Credentials, config);     
+            client = new AmazonS3Client(s3Credentials, config);
             transfer = new TransferUtility(client);
         }
 
@@ -62,7 +62,7 @@ namespace SessionAssetStore
             return header.Zip(data, (h, d) => new { h, d }).ToDictionary(item => item.h, item => item.d);
         }
 
-        internal List<AssetCategory> GetAllCategories()
+        public List<AssetCategory> GetAllCategories()
         {
             List<AssetCategory> categories = new List<AssetCategory>();
             PropertyInfo[] properties = typeof(AssetCategory).GetProperties(BindingFlags.Public | BindingFlags.Static);
@@ -80,53 +80,65 @@ namespace SessionAssetStore
         /// <param name="progress">An IProgress object to report download activities.</param>
         public async Task GetAssetManifestsAsync(AssetCategory assetCategory, EventHandler<WriteObjectProgressArgs> progress = null)
         {
-            if (client == null) throw new Exception("You must authenticate first.");
-            string manifestPath = Path.Combine(MANIFESTS_TEMP, assetCategory.Value);
-            // Delete the existing manifests if they exist, prevents old assets from being redownloaded.
-            if (Directory.Exists(manifestPath))
-            {
-                Directory.Delete(manifestPath, true);
-            }
-            Directory.CreateDirectory(manifestPath);
-            var buckets = await client.ListBucketsAsync().ConfigureAwait(false);
-
-            foreach (var bucket in buckets.Buckets)
-            {
-                var files = await client.ListObjectsAsync(bucket.BucketName).ConfigureAwait(false);
-                foreach (var file in files.S3Objects)
-                {
-                    if (file.Key.EndsWith(".json"))
-                    {
-                        GetObjectMetadataResponse metadataResponse = await client.GetObjectMetadataAsync(bucket.BucketName, file.Key).ConfigureAwait(false);
-                        var metadata = metadataResponse.Metadata;
-
-                        if (metadata != null)
-                        {
-                            if (metadata["category"] == assetCategory.Value)
-                            {
-                                using (var response = await client.GetObjectAsync(bucket.BucketName, file.Key).ConfigureAwait(false))
-                                {
-                                    response.WriteObjectProgressEvent += progress;
-                                    await response.WriteResponseStreamToFileAsync(Path.Combine(manifestPath, file.Key), false, CancellationToken.None).ConfigureAwait(false);
-                                    response.WriteObjectProgressEvent -= progress;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            await GetAssetManifestsAsync(new List<AssetCategory>() { assetCategory }, progress).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Gets the manifests for all categories.
         /// </summary>
         public async Task GetAllAssetManifestsAsync()
-        {     
-            foreach (AssetCategory cat in GetAllCategories())
+        {
+            await GetAssetManifestsAsync(GetAllCategories()).ConfigureAwait(false);
+        }
+
+        public async Task GetAssetManifestsAsync(List<AssetCategory> categoriestToGet, EventHandler<WriteObjectProgressArgs> progress = null)
+        {
+            if (client == null) throw new Exception("You must authenticate first.");
+
+
+            foreach (AssetCategory cat in categoriestToGet)
             {
-                await GetAssetManifestsAsync(cat).ConfigureAwait(false);     
+                string manifestPath = Path.Combine(MANIFESTS_TEMP, cat.Value);
+
+                // Delete the existing manifests if they exist, prevents old assets from being redownloaded.
+                if (Directory.Exists(manifestPath))
+                {
+                    Directory.Delete(manifestPath, true);
+                    Directory.CreateDirectory(manifestPath);
+                }
+            }
+
+
+            var buckets = await client.ListBucketsAsync().ConfigureAwait(false);
+
+            foreach (var bucket in buckets.Buckets)
+            {
+                var keys = await client.GetAllObjectKeysAsync(bucket.BucketName, null, null).ConfigureAwait(false);
+
+                foreach (var fileKey in keys.Where(k => k.EndsWith(".json")))
+                {
+                    GetObjectMetadataResponse metadataResponse = await client.GetObjectMetadataAsync(bucket.BucketName, fileKey).ConfigureAwait(false);
+                    var metadata = metadataResponse.Metadata;
+
+                    if (metadata != null)
+                    {
+                        if (categoriestToGet.Any(c => c.Value == metadata["category"]))
+                        {
+                            using (var response = await client.GetObjectAsync(bucket.BucketName, fileKey).ConfigureAwait(false))
+                            {
+                                string pathToFile = Path.Combine(MANIFESTS_TEMP, metadata["category"], fileKey);
+
+                                response.WriteObjectProgressEvent += progress;
+                                await response.WriteResponseStreamToFileAsync(pathToFile, false, CancellationToken.None).ConfigureAwait(false);
+                                response.WriteObjectProgressEvent -= progress;
+                            }
+                        }
+                    }
+
+                }
             }
         }
+
 
         /// <summary>
         /// Generate asset objects from the file manifests for a category.
@@ -204,7 +216,7 @@ namespace SessionAssetStore
 
             var downloadRequest = new TransferUtilityDownloadRequest()
             {
-                BucketName = await GetBucketNameAsync(asset.AssetName).ConfigureAwait(false),
+                BucketName = await GetBucketNameAsync(asset.Thumbnail).ConfigureAwait(false),
                 Key = asset.Thumbnail,
                 FilePath = destination
             };
@@ -216,16 +228,20 @@ namespace SessionAssetStore
         async Task<string> GetBucketNameAsync(string fileName)
         {
             var bucketResponse = await client.ListBucketsAsync().ConfigureAwait(false);
-
+            
             foreach (var bucket in bucketResponse.Buckets)
             {
-                var files = await client.ListObjectsAsync(bucket.BucketName).ConfigureAwait(false);
-                foreach(var file in files.S3Objects)
+                var request = new ListObjectsV2Request()
                 {
-                    if (file.Key== fileName)
-                    {
-                        return bucket.BucketName;
-                    }
+                    BucketName = bucket.BucketName,
+                    Prefix = fileName // set the prefix to the filename so less data is returned in response and only one object will be returned in response if file exists in bucket
+                };
+
+                var files = await client.ListObjectsV2Async(request).ConfigureAwait(false);
+
+                if (files.S3Objects.Count > 0)
+                {
+                    return bucket.BucketName;
                 }
             }
             return null;
@@ -251,7 +267,7 @@ namespace SessionAssetStore
             var manifestObject = new TransferUtilityUploadRequest()
             {
                 BucketName = bucketName,
-                Key= Path.GetFileName(assetManifest)
+                Key = Path.GetFileName(assetManifest)
             };
             var thumbnailObject = new TransferUtilityUploadRequest()
             {
@@ -261,7 +277,7 @@ namespace SessionAssetStore
             var assetObject = new TransferUtilityUploadRequest()
             {
                 BucketName = bucketName,
-                Key= assetToUpload.AssetName                
+                Key = assetToUpload.AssetName
             };
 
             using (var stream = File.OpenRead(assetManifest))
@@ -298,7 +314,7 @@ namespace SessionAssetStore
         {
             if (client == null) throw new Exception("You must authenticate first.");
             Asset assetToDelete = ValidateManifest(absolutePathToManifest);
-            DeleteAsset(bucketName, manifestName, assetToDelete);        
+            DeleteAsset(bucketName, manifestName, assetToDelete);
         }
 
         /// <summary>
@@ -322,10 +338,10 @@ namespace SessionAssetStore
         {
             var result = new List<string>();
             var bucketResponse = await client.ListBucketsAsync().ConfigureAwait(false); // use .ConfigureAwait(false) to avoid deadlocks ... 
-            
-            foreach(var bucket in bucketResponse.Buckets)
+
+            foreach (var bucket in bucketResponse.Buckets)
             {
-                if(!bucket.BucketName.StartsWith("session-"))
+                if (!bucket.BucketName.StartsWith("session-"))
                 {
                     result.Add(bucket.BucketName);
                 }
