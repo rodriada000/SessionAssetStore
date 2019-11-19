@@ -32,7 +32,7 @@
           "lib/netstandard2.0/Newtonsoft.Json.dll": {}
         }
       },
-      "SessionAssetStore/1.0.2": {
+      "SessionAssetStore/1.1.0": {
         "type": "project",
         "framework": ".NETStandard,Version=v2.0",
         "dependencies": {
@@ -169,7 +169,7 @@
         "packageIcon.png"
       ]
     },
-    "SessionAssetStore/1.0.2": {
+    "SessionAssetStore/1.1.0": {
       "type": "project",
       "path": "../SessionAssetStore/SessionAssetStore.csproj",
       "msbuildProject": "../SessionAssetStore/SessionAssetStore.csproj"
@@ -177,7 +177,7 @@
   },
   "projectFileDependencyGroups": {
     ".NETCoreApp,Version=v3.0": [
-      "SessionAssetStore >= 1.0.2"
+      "SessionAssetStore >= 1.1.0"
     ]
   },
   "packageFolders": {
