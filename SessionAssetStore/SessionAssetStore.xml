@@ -89,18 +89,18 @@
         </member>
         <member name="M:SessionAssetStore.StorageManager.Authenticate(System.String)">
             <summary>
-            Authenticates to the Google Cloud Storage API. Provide custom credentials to authenticate with modders rights.
+            Authenticates to the Amazon S3 API. Provide custom credentials to authenticate with modders rights.
             </summary>
             <param name="credentialsFile">The credentials to use to authenticate. Leave null for default read-only.</param>
         </member>
-        <member name="M:SessionAssetStore.StorageManager.GetAssetManifests(SessionAssetStore.AssetCategory,System.EventHandler{Amazon.S3.Model.WriteObjectProgressArgs})">
+        <member name="M:SessionAssetStore.StorageManager.GetAssetManifestsAsync(SessionAssetStore.AssetCategory,System.EventHandler{Amazon.S3.Model.WriteObjectProgressArgs})">
             <summary>
             Fetch all manifests for a single category.
             </summary>
             <param name="assetCategory">The category of asset manifest to fetch</param>
             <param name="progress">An IProgress object to report download activities.</param>
         </member>
-        <member name="M:SessionAssetStore.StorageManager.GetAllAssetManifests">
+        <member name="M:SessionAssetStore.StorageManager.GetAllAssetManifestsAsync">
             <summary>
             Gets the manifests for all categories.
             </summary>
@@ -118,7 +118,7 @@
             </summary>
             <returns>Complete list of asset objects</returns>
         </member>
-        <member name="M:SessionAssetStore.StorageManager.DownloadAsset(SessionAssetStore.Asset,System.String,System.EventHandler{Amazon.S3.Model.WriteObjectProgressArgs},System.Boolean)">
+        <member name="M:SessionAssetStore.StorageManager.DownloadAssetAsync(SessionAssetStore.Asset,System.String,System.EventHandler{Amazon.S3.Model.WriteObjectProgressArgs},System.Boolean)">
             <summary>
             Download a single asset.
             </summary>
@@ -127,7 +127,7 @@
             <param name="progress">An IProgress object to report download activities.</param>
             <param name="update">Redownload and overwrite an existing asset of the same name.</param>
         </member>
-        <member name="M:SessionAssetStore.StorageManager.DownloadAssetThumbnail(SessionAssetStore.Asset,System.String,System.EventHandler{Amazon.S3.Model.WriteObjectProgressArgs},System.Boolean)">
+        <member name="M:SessionAssetStore.StorageManager.DownloadAssetThumbnailAsync(SessionAssetStore.Asset,System.String,System.EventHandler{Amazon.S3.Model.WriteObjectProgressArgs},System.Boolean)">
             <summary>
             Download the thumbnail of an asset.
             </summary>
@@ -136,15 +136,15 @@
             <param name="progress">An IProgress object to report download activities.</param>
             <param name="update">Redownload and overwrite an existing thumbnail of the same name.</param>
         </member>
-        <member name="M:SessionAssetStore.StorageManager.UploadAsset(System.String,System.String,System.String,System.String,System.EventHandler{Amazon.S3.Transfer.UploadProgressArgs})">
+        <member name="M:SessionAssetStore.StorageManager.UploadAssetAsync(System.String,System.String,System.String,System.String,System.EventHandler{Amazon.S3.Transfer.UploadProgressArgs})">
             <summary>
             Upload an asset to the storage server.
             </summary>
             <param name="assetManifest"> absolute path to the json manifest file </param>
             <param name="assetThumbnail"> absolute path to the thumbnail image file </param>
             <param name="asset"> absolute path to the asset file (e.g. a .zip file) </param>
-            <param name="bucketName"> Name of google cloud storage bucket to upload to </param>
-            <param name="progress"> array of IUpload representing progress for [Manifest, Thumbnail, File] in that order. </param>
+            <param name="bucketName"> Name of storage bucket to upload to </param>
+            <param name="progress"> EventHandler delegate to report progress of upload </param>
         </member>
         <member name="M:SessionAssetStore.StorageManager.DeleteAsset(System.String,System.String,System.String)">
             <summary>
@@ -159,7 +159,7 @@
             <param name="manifestName">name of the manifest file on the server.</param>
             <param name="assetToDelete"> Asset to delete </param>
         </member>
-        <member name="M:SessionAssetStore.StorageManager.ListBuckets">
+        <member name="M:SessionAssetStore.StorageManager.ListBucketsAsync">
             <summary>
             List all custom buckets
             </summary>
