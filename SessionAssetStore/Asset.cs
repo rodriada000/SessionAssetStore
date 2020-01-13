@@ -92,6 +92,8 @@ namespace SessionAssetStore
         public static AssetCategory Decks { get { return new AssetCategory("session-decks"); } }
         public static AssetCategory Trucks { get { return new AssetCategory("session-trucks"); } }
         public static AssetCategory Wheels { get { return new AssetCategory("session-wheels"); } }
+        public static AssetCategory Meshes { get { return new AssetCategory("session-meshes"); } }
+        public static AssetCategory Characters { get { return new AssetCategory("session-characters"); } }
 
         /// <summary>
         /// Converts a string to an AssetCategory
@@ -120,6 +122,10 @@ namespace SessionAssetStore
                     return Trucks;
                 case ("session-wheels"):
                     return Wheels;
+                case ("session-meshes"):
+                    return Meshes;
+                case ("session-characters"):
+                    return Characters;
                 default:
                     throw new Exception($"Invalid category provided: {category}");
             }
